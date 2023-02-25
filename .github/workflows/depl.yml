@@ -1,0 +1,45 @@
+name:  Build and deploy a Rxjs Project
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  build:
+    name: Build application
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.14.2]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@master
+        with:
+          persist-credentials: false
+          fetch-depth: 0'
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build
+      - name: Upload production-ready build files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./dist
+  deploy:
+    name: Deploy application
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
